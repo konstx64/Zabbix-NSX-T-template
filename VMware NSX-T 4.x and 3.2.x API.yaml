@@ -1,0 +1,691 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: a571c0d144b14fd4a87a9d9b2aa9fcd6
+      name: Templates/Applications
+  templates:
+    - uuid: cb2b29037ef6449da6255001e9a762e1
+      template: 'VMware NSX-T 4.x and 3.2.x API'
+      name: 'VMware NSX-T 4.x and 3.2.x API'
+      description: |
+        This template is designed to collect data on the status of NSX-T core components.
+        Please note that, depending on the size of the infrastructure and the number of objects in it, you may encounter the NSX-T API rate limit, which is set to 100 by default.
+        It is recommended to either use manager nodes behind a load balancer to distribute API requests or adjust the rate limiter value using the command from CLI:
+        set service http client-api-rate-limit 200
+      vendor:
+        name: github.com/konstx64
+        version: 1.0-1
+      groups:
+        - name: Templates/Applications
+      items:
+        - uuid: 818d3bd8afb74c699d0b51c0a4dda0a2
+          name: 'Management cluster overall status'
+          type: DEPENDENT
+          key: nsxt.cluster.overal_status
+          delay: '0'
+          value_type: CHAR
+          trends: '0'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.detailed_cluster_status.overall_status
+          master_item:
+            key: nsxt.cluster_services
+          triggers:
+            - uuid: 0f534e0adb0a4ff48b11aa3b2a413e62
+              expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.cluster.overal_status,#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.cluster.overal_status,#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.cluster.overal_status,#1)<>"STABLE"'
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.cluster.overal_status,#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.cluster.overal_status,#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.cluster.overal_status,#1)="STABLE"'
+              name: 'NSX cluster state changed'
+              priority: AVERAGE
+              manual_close: 'YES'
+        - uuid: b778abb9cc0f4639bce26ce6b1e8d20b
+          name: 'cluster services'
+          type: HTTP_AGENT
+          key: nsxt.cluster_services
+          delay: 3m
+          history: '0'
+          value_type: TEXT
+          trends: '0'
+          authtype: BASIC
+          username: '{$NSX.USERNAME}'
+          password: '{$NSX.PASSWORD}'
+          url: 'https://{$NSX.URL}/api/v1/cluster/status'
+          headers:
+            - name: Content-Type
+              value: application/json
+      discovery_rules:
+        - uuid: 51ca0dd136e746f7bb8201901e9ad000
+          name: 'NSX-T EdgeNodes discovery'
+          type: HTTP_AGENT
+          key: nsxt.edgenodes.discovery
+          delay: 1h
+          authtype: BASIC
+          username: '{$NSX.USERNAME}'
+          password: '{$NSX.PASSWORD}'
+          item_prototypes:
+            - uuid: a4e29fbf57f44016ada21f3ea098667f
+              name: 'Edge Node {#EDGENODE_NAME} configuration state'
+              type: HTTP_AGENT
+              key: 'nsxt.edgenode.conf.state[{#EDGENODE_ID}]'
+              delay: 5m
+              value_type: CHAR
+              trends: '0'
+              authtype: BASIC
+              username: '{$NSX.USERNAME}'
+              password: '{$NSX.PASSWORD}'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.node_deployment_state.state
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 6h
+              url: 'https://{$NSX.URL}/api/v1/transport-nodes/{#EDGENODE_ID}/state'
+              headers:
+                - name: Content-Type
+                  value: application/json
+              tags:
+                - tag: component
+                  value: EdgeNode
+                - tag: EdgeNode
+                  value: '{#EDGENODE_NAME} {#EDGENODE_ID}'
+              trigger_prototypes:
+                - uuid: 3273e8ae44f246c9890b9af1f0c9624a
+                  expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.conf.state[{#EDGENODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.conf.state[{#EDGENODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.conf.state[{#EDGENODE_ID}])<>"NODE_READY"'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.conf.state[{#EDGENODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.conf.state[{#EDGENODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.conf.state[{#EDGENODE_ID}])="NODE_READY"'
+                  name: 'Edge Node {#EDGENODE_NAME} configuration state'
+                  priority: WARNING
+                  manual_close: 'YES'
+            - uuid: 3b0a3b0a978a4c3389e97a8aed00db82
+              name: 'Edge Node {#EDGENODE_NAME}  overal state'
+              type: HTTP_AGENT
+              key: 'nsxt.edgenode.state[{#EDGENODE_ID}]'
+              delay: 5m
+              value_type: CHAR
+              trends: '0'
+              authtype: BASIC
+              username: '{$NSX.USERNAME}'
+              password: '{$NSX.PASSWORD}'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.state
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 6h
+              url: 'https://{$NSX.URL}/api/v1/transport-nodes/{#EDGENODE_ID}/state'
+              headers:
+                - name: Content-Type
+                  value: application/json
+              tags:
+                - tag: component
+                  value: EdgeNode
+                - tag: EdgeNode
+                  value: '{#EDGENODE_NAME} {#EDGENODE_ID}'
+              trigger_prototypes:
+                - uuid: 53e3b458eed24461a3852b6d31d71709
+                  expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.state[{#EDGENODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.state[{#EDGENODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.state[{#EDGENODE_ID}])<>"success"'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.state[{#EDGENODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.state[{#EDGENODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.state[{#EDGENODE_ID}])="success"'
+                  name: 'Edge Node {#EDGENODE_NAME}  overal state'
+                  priority: WARNING
+                  manual_close: 'YES'
+          url: 'https://{$NSX.URL}/api/v1/transport-nodes'
+          query_fields:
+            - name: node_types
+              value: EdgeNode
+            - name: page_size
+              value: '1000'
+          headers:
+            - name: Content-Type
+              value: application/json
+          lld_macro_paths:
+            - lld_macro: '{#EDGENODE_ID}'
+              path: $..id.first()
+            - lld_macro: '{#EDGENODE_NAME}'
+              path: $..display_name.first()
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - '$.results[*]'
+        - uuid: f7e1fbcc85c546bd9e64ae52e009ade6
+          name: 'NSX-T Appliance nodes discovery'
+          type: HTTP_AGENT
+          key: nsxt.managers.discovery
+          delay: 1h
+          authtype: BASIC
+          username: '{$NSX.USERNAME}'
+          password: '{$NSX.PASSWORD}'
+          item_prototypes:
+            - uuid: cda341649fe341cf9ff20d922e4ed084
+              name: '{#NODE_NAME} id {#NODE_ID} CLUSTER_BOOT_MANAGER state'
+              type: DEPENDENT
+              key: 'nsxt.manager.cl_boot_manager[{#NODE_ID}]'
+              delay: '0'
+              value_type: CHAR
+              trends: '0'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.detailed_cluster_status.groups[?(@.group_type == "CLUSTER_BOOT_MANAGER")].group_status.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 6h
+              master_item:
+                key: nsxt.cluster_services
+              tags:
+                - tag: component
+                  value: 'NSX Manager nodes'
+                - tag: 'NSX Manager'
+                  value: '{#NODE_NAME} {#NODE_ID}'
+              trigger_prototypes:
+                - uuid: 76f153be436b4d2b9558731e3d84c18d
+                  expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cl_boot_manager[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cl_boot_manager[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cl_boot_manager[{#NODE_ID}])<>"UP"'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cl_boot_manager[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cl_boot_manager[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cl_boot_manager[{#NODE_ID}])="UP"'
+                  name: '{#NODE_NAME} id {#NODE_ID} CLUSTER_BOOT_MANAGER state'
+                  priority: WARNING
+                  manual_close: 'YES'
+            - uuid: 91f99695e1804ad1937fff132055af6b
+              name: '{#NODE_NAME} id {#NODE_ID} cluser DATASTORE state'
+              type: DEPENDENT
+              key: 'nsxt.manager.cl_datstore_dependent[{#NODE_ID}]'
+              delay: '0'
+              value_type: CHAR
+              trends: '0'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.detailed_cluster_status.groups[?(@.group_type == "DATASTORE")].group_status.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 6h
+              master_item:
+                key: nsxt.cluster_services
+              tags:
+                - tag: component
+                  value: 'NSX Manager nodes'
+                - tag: 'NSX Manager'
+                  value: '{#NODE_NAME} {#NODE_ID}'
+              trigger_prototypes:
+                - uuid: 939c21d956ef4eefbbc1fb3308295772
+                  expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cl_datstore_dependent[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cl_datstore_dependent[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cl_datstore_dependent[{#NODE_ID}])<>"UP"'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cl_datstore_dependent[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cl_datstore_dependent[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cl_datstore_dependent[{#NODE_ID}])="UP"'
+                  name: '{#NODE_NAME} id {#NODE_ID} cluser DATASTORE state'
+                  priority: WARNING
+                  manual_close: 'YES'
+            - uuid: 3136337f69324800afcdb49d2ceaa6d2
+              name: '{#NODE_NAME} id {#NODE_ID} CM-INVENTORY state'
+              type: DEPENDENT
+              key: 'nsxt.manager.cm-inventory[{#NODE_ID}]'
+              delay: '0'
+              value_type: CHAR
+              trends: '0'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.detailed_cluster_status.groups[?(@.group_type == "CM-INVENTORY")].group_status.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 6h
+              master_item:
+                key: nsxt.cluster_services
+              tags:
+                - tag: component
+                  value: 'NSX Manager nodes'
+                - tag: 'NSX Manager'
+                  value: '{#NODE_NAME} {#NODE_ID}'
+              trigger_prototypes:
+                - uuid: 9411c8d5d946449395289d1028175806
+                  expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cm-inventory[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cm-inventory[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cm-inventory[{#NODE_ID}])<>"STABLE"'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cm-inventory[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cm-inventory[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cm-inventory[{#NODE_ID}])="STABLE"'
+                  name: '{#NODE_NAME} id {#NODE_ID} CM-INVENTORY state'
+                  priority: WARNING
+                  manual_close: 'YES'
+            - uuid: 6d2bc654d34d40919b8b63f2ccf70084
+              name: '{#NODE_NAME} id {#NODE_ID} state'
+              type: HTTP_AGENT
+              key: 'nsxt.manager.conn_status[{#NODE_ID}]'
+              delay: 10m
+              value_type: CHAR
+              trends: '0'
+              authtype: BASIC
+              username: '{$NSX.USERNAME}'
+              password: '{$NSX.PASSWORD}'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.mgmt_cluster_status.mgmt_cluster_status
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 6h
+              url: 'https://{$NSX.URL}/api/v1/cluster/nodes/{#NODE_ID}/status'
+              headers:
+                - name: Content-Type
+                  value: application/json
+              tags:
+                - tag: component
+                  value: 'NSX Manager nodes'
+                - tag: 'NSX Manager'
+                  value: '{#NODE_NAME} {#NODE_ID}'
+              trigger_prototypes:
+                - uuid: ef604f774c264dccaf98b8566f01f05c
+                  expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.conn_status[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.conn_status[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.conn_status[{#NODE_ID}])<>"CONNECTED"'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.conn_status[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.conn_status[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.conn_status[{#NODE_ID}])="CONNECTED"'
+                  name: '{#NODE_NAME} id {#NODE_ID} state'
+                  priority: WARNING
+                  manual_close: 'YES'
+            - uuid: 7cfe4f9e6c9143d8bb8fca4f845754f9
+              name: '{#NODE_NAME} id {#NODE_ID} CONTROLLER state'
+              type: DEPENDENT
+              key: 'nsxt.manager.controller[{#NODE_ID}]'
+              delay: '0'
+              value_type: CHAR
+              trends: '0'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.detailed_cluster_status.groups[?(@.group_type == "CONTROLLER")].group_status.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 6h
+              master_item:
+                key: nsxt.cluster_services
+              tags:
+                - tag: component
+                  value: 'NSX Manager nodes'
+                - tag: 'NSX Manager'
+                  value: '{#NODE_NAME} {#NODE_ID}'
+              trigger_prototypes:
+                - uuid: 02bafeda8d4244838f4641cf6335f0e6
+                  expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.controller[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.controller[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.controller[{#NODE_ID}])<>"STABLE"'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.controller[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.controller[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.controller[{#NODE_ID}])="STABLE"'
+                  name: '{#NODE_NAME} id {#NODE_ID} CONTROLLER state'
+                  priority: WARNING
+                  manual_close: 'YES'
+            - uuid: 37b5bcfb90464453860952ad0217ee8d
+              name: '{#NODE_NAME} id {#NODE_ID} CORFU_NONCONFIG state'
+              type: DEPENDENT
+              key: 'nsxt.manager.corfu_nonconfig[{#NODE_ID}]'
+              delay: '0'
+              value_type: CHAR
+              trends: '0'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.detailed_cluster_status.groups[?(@.group_type == "CORFU_NONCONFIG")].group_status.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 6h
+              master_item:
+                key: nsxt.cluster_services
+              tags:
+                - tag: component
+                  value: 'NSX Manager nodes'
+                - tag: 'NSX Manager'
+                  value: '{#NODE_NAME} {#NODE_ID}'
+              trigger_prototypes:
+                - uuid: de7ff918af7e483aade214eeba7b6a9c
+                  expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.corfu_nonconfig[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.corfu_nonconfig[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.corfu_nonconfig[{#NODE_ID}],#1)<>"UP"'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.corfu_nonconfig[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.corfu_nonconfig[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.corfu_nonconfig[{#NODE_ID}],#1)="UP"'
+                  name: '{#NODE_NAME} id {#NODE_ID} CORFU_NONCONFIG state'
+                  priority: WARNING
+                  manual_close: 'YES'
+            - uuid: 462fc25b9a6048608ddef6c2e4dedf9c
+              name: '{#NODE_NAME} id {#NODE_ID} HTTPS state'
+              type: DEPENDENT
+              key: 'nsxt.manager.https[{#NODE_ID}]'
+              delay: '0'
+              value_type: CHAR
+              trends: '0'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.detailed_cluster_status.groups[?(@.group_type == "HTTPS")].group_status.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 6h
+              master_item:
+                key: nsxt.cluster_services
+              tags:
+                - tag: component
+                  value: 'NSX Manager nodes'
+                - tag: 'NSX Manager'
+                  value: '{#NODE_NAME} {#NODE_ID}'
+              trigger_prototypes:
+                - uuid: 2cd5ed16b7a744f8b1c7a7a84d1a994d
+                  expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.https[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.https[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.https[{#NODE_ID}])<>"UP"'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.https[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.https[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.https[{#NODE_ID}])="UP"'
+                  name: '{#NODE_NAME} id {#NODE_ID} HTTPS state'
+                  priority: WARNING
+                  manual_close: 'YES'
+            - uuid: 1045195d2dd64719932cede535179a26
+              name: '{#NODE_NAME} id {#NODE_ID} IDPS_REPORTING state'
+              type: DEPENDENT
+              key: 'nsxt.manager.idps_reporting[{#NODE_ID}]'
+              delay: '0'
+              value_type: CHAR
+              trends: '0'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.detailed_cluster_status.groups[?(@.group_type == "IDPS_REPORTING")].group_status.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 6h
+              master_item:
+                key: nsxt.cluster_services
+              tags:
+                - tag: component
+                  value: 'NSX Manager nodes'
+                - tag: 'NSX Manager'
+                  value: '{#NODE_NAME} {#NODE_ID}'
+              trigger_prototypes:
+                - uuid: 92176d7c6f334648869dbeaad0b2f08d
+                  expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.idps_reporting[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.idps_reporting[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.idps_reporting[{#NODE_ID}])<>"UP"'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.idps_reporting[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.idps_reporting[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.idps_reporting[{#NODE_ID}])="UP"'
+                  name: '{#NODE_NAME} id {#NODE_ID} IDPS_REPORTING state'
+                  priority: WARNING
+                  manual_close: 'YES'
+            - uuid: 49b67a15f0a54d86986883c73c6540dd
+              name: '{#NODE_NAME} id {#NODE_ID} MANAGER state'
+              type: DEPENDENT
+              key: 'nsxt.manager.manager[{#NODE_ID}]'
+              delay: '0'
+              value_type: CHAR
+              trends: '0'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.detailed_cluster_status.groups[?(@.group_type == "MANAGER")].group_status.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 6h
+              master_item:
+                key: nsxt.cluster_services
+              tags:
+                - tag: component
+                  value: 'NSX Manager nodes'
+                - tag: 'NSX Manager'
+                  value: '{#NODE_NAME} {#NODE_ID}'
+              trigger_prototypes:
+                - uuid: ef34b601d0de47b79236c5d5c11a8fef
+                  expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.manager[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.manager[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.manager[{#NODE_ID}])<>"UP"'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.manager[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.manager[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.manager[{#NODE_ID}])="UP"'
+                  name: '{#NODE_NAME} id {#NODE_ID} MANAGER state'
+                  priority: WARNING
+                  manual_close: 'YES'
+            - uuid: 17b1596889f7413f997d246f9a04ffdf
+              name: '{#NODE_NAME} id {#NODE_ID} MONITORING state'
+              type: DEPENDENT
+              key: 'nsxt.manager.monitoring[{#NODE_ID}]'
+              delay: '0'
+              value_type: CHAR
+              trends: '0'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.detailed_cluster_status.groups[?(@.group_type == "MONITORING")].group_status.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 6h
+              master_item:
+                key: nsxt.cluster_services
+              tags:
+                - tag: component
+                  value: 'NSX Manager nodes'
+                - tag: 'NSX Manager'
+                  value: '{#NODE_NAME} {#NODE_ID}'
+              trigger_prototypes:
+                - uuid: 311e2a348d6d4700a28faf88c1db87fe
+                  expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.monitoring[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.monitoring[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.monitoring[{#NODE_ID}])<>"UP"'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.monitoring[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.monitoring[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.monitoring[{#NODE_ID}])="UP"'
+                  name: '{#NODE_NAME} id {#NODE_ID} MONITORING state'
+                  priority: WARNING
+            - uuid: 44d141672a87429b9ae6f78a31d81a17
+              name: '{#NODE_NAME} id {#NODE_ID} MESSAGING-MANAGER state'
+              type: DEPENDENT
+              key: 'nsxt.manager.msg-manager[{#NODE_ID}]'
+              delay: '0'
+              value_type: CHAR
+              trends: '0'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.detailed_cluster_status.groups[?(@.group_type == "MESSAGING-MANAGER")].group_status.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 6h
+              master_item:
+                key: nsxt.cluster_services
+              tags:
+                - tag: component
+                  value: 'NSX Manager nodes'
+                - tag: 'NSX Manager'
+                  value: '{#NODE_NAME} {#NODE_ID}'
+              trigger_prototypes:
+                - uuid: 9bb7b514e5b94d3c96fe51533f38f6e4
+                  expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.msg-manager[{#NODE_ID}],#1) <> last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.msg-manager[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.msg-manager[{#NODE_ID}])<>"UP"'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.msg-manager[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.msg-manager[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.msg-manager[{#NODE_ID}])="UP"'
+                  name: '{#NODE_NAME} id {#NODE_ID} MESSAGING-MANAGER state'
+                  priority: WARNING
+                  manual_close: 'YES'
+            - uuid: d17064b41db44c138f6a574fd36f6a71
+              name: '{#NODE_NAME} id {#NODE_ID} SITE_MANAGER state'
+              type: DEPENDENT
+              key: 'nsxt.manager.site_manager[{#NODE_ID}]'
+              delay: '0'
+              value_type: CHAR
+              trends: '0'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.detailed_cluster_status.groups[?(@.group_type == "SITE_MANAGER")].group_status.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 6h
+              master_item:
+                key: nsxt.cluster_services
+              tags:
+                - tag: component
+                  value: 'NSX Manager nodes'
+                - tag: 'NSX Manager'
+                  value: '{#NODE_NAME} {#NODE_ID}'
+              trigger_prototypes:
+                - uuid: 603682d76f9e4684a04c47fc8d7280f8
+                  expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.site_manager[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.site_manager[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.site_manager[{#NODE_ID}])<>"UP"'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.site_manager[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.site_manager[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.site_manager[{#NODE_ID}])="UP"'
+                  name: '{#NODE_NAME} id {#NODE_ID} SITE_MANAGER state'
+                  priority: WARNING
+                  manual_close: 'YES'
+          url: 'https://{$NSX.URL}/api/v1/cluster'
+          headers:
+            - name: Content-Type
+              value: application/json
+          lld_macro_paths:
+            - lld_macro: '{#NODE_ID}'
+              path: $..node_uuid.first()
+            - lld_macro: '{#NODE_NAME}'
+              path: $..fqdn.first()
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - '$.nodes[*]'
+        - uuid: 6a07f40bba8246e0b8354c6f3f40c615
+          name: 'NSX-T T0 gateways discovery'
+          type: HTTP_AGENT
+          key: nsxt.T0s.discovery
+          delay: 1h
+          authtype: BASIC
+          username: '{$NSX.USERNAME}'
+          password: '{$NSX.PASSWORD}'
+          item_prototypes:
+            - uuid: 7ec1ae2e6adb4efe928f6961eb640216
+              name: '{#T0_NAME} with path {#T0_PATH} overal state'
+              type: HTTP_AGENT
+              key: 'nsxt.T0s.state.[{#T0_ID}]'
+              delay: 5m
+              value_type: CHAR
+              trends: '0'
+              authtype: BASIC
+              username: '{$NSX.USERNAME}'
+              password: '{$NSX.PASSWORD}'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.results[*].status.consolidated_status.consolidated_status.first()'
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 6h
+              url: 'https://{$NSX.URL}/policy/api/v1/search'
+              query_fields:
+                - name: query
+                  value: 'resource_type:Tier0 AND path:"{#T0_PATH}"'
+              headers:
+                - name: Content-Type
+                  value: application/json
+              tags:
+                - tag: component
+                  value: 'T0 Gateway'
+                - tag: 'T0 Gateway'
+                  value: '{#T0_NAME} {#T0_ID}'
+              trigger_prototypes:
+                - uuid: d62161a8ddca40e98bd60adab12eee71
+                  expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.T0s.state.[{#T0_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.T0s.state.[{#T0_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.T0s.state.[{#T0_ID}])<>"SUCCESS"'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.T0s.state.[{#T0_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.T0s.state.[{#T0_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.T0s.state.[{#T0_ID}])="SUCCESS"'
+                  name: '{#T0_NAME} with path {#T0_PATH} overal state'
+                  priority: WARNING
+                  manual_close: 'YES'
+          url: 'https://{$NSX.URL}/api/v1/logical-routers'
+          query_fields:
+            - name: page_size
+              value: '1000'
+            - name: router_type
+              value: TIER0
+          headers:
+            - name: Content-Type
+              value: application/json
+          lld_macro_paths:
+            - lld_macro: '{#T0_ID}'
+              path: $..id.first()
+            - lld_macro: '{#T0_NAME}'
+              path: $..display_name.first()
+            - lld_macro: '{#T0_PATH}'
+              path: $..tag.first()
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - '$.results[*]'
+        - uuid: 1ca10266731e433f87f411c80e56c977
+          name: 'NSX-T Host transport nodes discovery'
+          type: HTTP_AGENT
+          key: nsxt.tn.nodes.discovery
+          delay: 1h
+          authtype: BASIC
+          username: '{$NSX.USERNAME}'
+          password: '{$NSX.PASSWORD}'
+          item_prototypes:
+            - uuid: 6489adbb8b0d41029c43f10cb838f88d
+              name: '{#TN_NODE_NAME} deployment state'
+              type: HTTP_AGENT
+              key: 'nsxt.tn.node.deployment.state[{#TN_NODE_ID}]'
+              delay: 5m
+              value_type: CHAR
+              trends: '0'
+              authtype: BASIC
+              username: '{$NSX.USERNAME}'
+              password: '{$NSX.PASSWORD}'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.node_deployment_state.state
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 6h
+              url: 'https://{$NSX.URL}/api/v1/transport-nodes/{#TN_NODE_ID}/state'
+              tags:
+                - tag: component
+                  value: HostTransportNode
+              trigger_prototypes:
+                - uuid: 473fb46b9c7b4d489973df174187e63a
+                  expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.tn.node.deployment.state[{#TN_NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.tn.node.deployment.state[{#TN_NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.tn.node.deployment.state[{#TN_NODE_ID}])<>"success"'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.tn.node.deployment.state[{#TN_NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.tn.node.deployment.state[{#TN_NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.tn.node.deployment.state[{#TN_NODE_ID}])="success"'
+                  name: '{#TN_NODE_NAME} deployment state'
+                  priority: WARNING
+                  manual_close: 'YES'
+            - uuid: 7854cec228b44f1bb7e3a62bfc87087b
+              name: '{#TN_NODE_NAME} status'
+              type: HTTP_AGENT
+              key: 'nsxt.tn.nodes.status[{#TN_NODE_ID}]'
+              delay: 5m
+              value_type: CHAR
+              trends: '0'
+              authtype: BASIC
+              username: '{$NSX.USERNAME}'
+              password: '{$NSX.PASSWORD}'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.state
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 6h
+              url: 'https://{$NSX.URL}/api/v1/transport-nodes/{#TN_NODE_ID}/state'
+              tags:
+                - tag: component
+                  value: HostTransportNode
+              trigger_prototypes:
+                - uuid: 66fa49f271754015a052f40820342fc4
+                  expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.tn.nodes.status[{#TN_NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.tn.nodes.status[{#TN_NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.tn.nodes.status[{#TN_NODE_ID}])<>"success"'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.tn.nodes.status[{#TN_NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.tn.nodes.status[{#TN_NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.tn.nodes.status[{#TN_NODE_ID}])="success"'
+                  name: '{#TN_NODE_NAME} status'
+                  priority: WARNING
+                  manual_close: 'YES'
+          url: 'https://{$NSX.URL}/api/v1/transport-nodes'
+          query_fields:
+            - name: node_types
+              value: HostNode
+            - name: page_size
+              value: '1000'
+          headers:
+            - name: Content-Type
+              value: application/json
+          lld_macro_paths:
+            - lld_macro: '{#TN_NODE_ID}'
+              path: $..node_id.first()
+            - lld_macro: '{#TN_NODE_NAME}'
+              path: $..display_name.first()
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - '$.results[*]'
+      tags:
+        - tag: class
+          value: software
+        - tag: target
+          value: NSX
+        - tag: target
+          value: vmware
+      macros:
+        - macro: '{$NSX.PASSWORD}'
+          description: 'NSX-T API Password'
+        - macro: '{$NSX.URL}'
+          description: 'NSX-T Manager URL or IP(e.g.,nsx-mgr.example.com) without scheme'
+        - macro: '{$NSX.USERNAME}'
+          description: 'NSX-T API Username'
