@@ -1,4 +1,4 @@
-# Zabbix-NSX-T-template
+# Zabbix NSX-T template
 Zabbix template with LLD for VMware NSX 4.x
 
 This template is designed to collect data on the status of NSX-T core components.
