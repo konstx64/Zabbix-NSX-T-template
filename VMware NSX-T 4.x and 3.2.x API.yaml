@@ -14,7 +14,7 @@ zabbix_export:
         set service http client-api-rate-limit 200
       vendor:
         name: github.com/konstx64
-        version: 1.0-1
+        version: 1.0-2
       groups:
         - name: Templates/Applications
       items:
