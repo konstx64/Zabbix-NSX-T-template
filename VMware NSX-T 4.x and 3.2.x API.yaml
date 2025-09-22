@@ -185,7 +185,7 @@ zabbix_export:
                   expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cl_boot_manager[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cl_boot_manager[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cl_boot_manager[{#NODE_ID}])<>"STABLE"'
                   recovery_mode: RECOVERY_EXPRESSION
                   recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cl_boot_manager[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cl_boot_manager[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cl_boot_manager[{#NODE_ID}])="STABLE"'
-                  name: '{#NODE_NAME} id {#NODE_ID} CLUSTER_BOOT_MANAGER state'
+                  name: '{#NODE_NAME} CLUSTER_BOOT_MANAGER state'
                   priority: WARNING
                   manual_close: 'YES'
             - uuid: 91f99695e1804ad1937fff132055af6b
@@ -214,7 +214,7 @@ zabbix_export:
                   expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cl_datstore_dependent[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cl_datstore_dependent[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cl_datstore_dependent[{#NODE_ID}])<>"STABLE"'
                   recovery_mode: RECOVERY_EXPRESSION
                   recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cl_datstore_dependent[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cl_datstore_dependent[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cl_datstore_dependent[{#NODE_ID}])="STABLE"'
-                  name: '{#NODE_NAME} id {#NODE_ID} cluser DATASTORE state'
+                  name: '{#NODE_NAME} cluser DATASTORE state'
                   priority: WARNING
                   manual_close: 'YES'
             - uuid: 3136337f69324800afcdb49d2ceaa6d2
@@ -243,7 +243,7 @@ zabbix_export:
                   expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cm-inventory[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cm-inventory[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cm-inventory[{#NODE_ID}])<>"STABLE"'
                   recovery_mode: RECOVERY_EXPRESSION
                   recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cm-inventory[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cm-inventory[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cm-inventory[{#NODE_ID}])="STABLE"'
-                  name: '{#NODE_NAME} id {#NODE_ID} CM-INVENTORY state'
+                  name: '{#NODE_NAME} CM-INVENTORY state'
                   priority: WARNING
                   manual_close: 'YES'
             - uuid: 6d2bc654d34d40919b8b63f2ccf70084
@@ -306,7 +306,7 @@ zabbix_export:
                   expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.controller[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.controller[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.controller[{#NODE_ID}])<>"STABLE"'
                   recovery_mode: RECOVERY_EXPRESSION
                   recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.controller[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.controller[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.controller[{#NODE_ID}])="STABLE"'
-                  name: '{#NODE_NAME} id {#NODE_ID} CONTROLLER state'
+                  name: '{#NODE_NAME} CONTROLLER state'
                   priority: WARNING
                   manual_close: 'YES'
             - uuid: 37b5bcfb90464453860952ad0217ee8d
@@ -335,7 +335,7 @@ zabbix_export:
                   expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.corfu_nonconfig[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.corfu_nonconfig[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.corfu_nonconfig[{#NODE_ID}],#1)<>"STABLE"'
                   recovery_mode: RECOVERY_EXPRESSION
                   recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.corfu_nonconfig[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.corfu_nonconfig[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.corfu_nonconfig[{#NODE_ID}],#1)="STABLE"'
-                  name: '{#NODE_NAME} id {#NODE_ID} CORFU_NONCONFIG state'
+                  name: '{#NODE_NAME} CORFU_NONCONFIG state'
                   priority: WARNING
                   manual_close: 'YES'
             - uuid: 462fc25b9a6048608ddef6c2e4dedf9c
@@ -364,7 +364,7 @@ zabbix_export:
                   expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.https[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.https[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.https[{#NODE_ID}])<>"STABLE"'
                   recovery_mode: RECOVERY_EXPRESSION
                   recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.https[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.https[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.https[{#NODE_ID}])="STABLE"'
-                  name: '{#NODE_NAME} id {#NODE_ID} HTTPS state'
+                  name: '{#NODE_NAME} HTTPS state'
                   priority: WARNING
                   manual_close: 'YES'
             - uuid: 1045195d2dd64719932cede535179a26
@@ -393,7 +393,7 @@ zabbix_export:
                   expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.idps_reporting[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.idps_reporting[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.idps_reporting[{#NODE_ID}])<>"STABLE"'
                   recovery_mode: RECOVERY_EXPRESSION
                   recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.idps_reporting[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.idps_reporting[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.idps_reporting[{#NODE_ID}])="STABLE"'
-                  name: '{#NODE_NAME} id {#NODE_ID} IDPS_REPORTING state'
+                  name: '{#NODE_NAME} IDPS_REPORTING state'
                   priority: WARNING
                   manual_close: 'YES'
             - uuid: 49b67a15f0a54d86986883c73c6540dd
@@ -451,7 +451,7 @@ zabbix_export:
                   expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.monitoring[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.monitoring[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.monitoring[{#NODE_ID}])<>"STABLE"'
                   recovery_mode: RECOVERY_EXPRESSION
                   recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.monitoring[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.monitoring[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.monitoring[{#NODE_ID}])="STABLE"'
-                  name: '{#NODE_NAME} id {#NODE_ID} MONITORING state'
+                  name: '{#NODE_NAME} MONITORING state'
                   priority: WARNING
             - uuid: 44d141672a87429b9ae6f78a31d81a17
               name: '{#NODE_NAME} MESSAGING-MANAGER state'
@@ -479,7 +479,7 @@ zabbix_export:
                   expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.msg-manager[{#NODE_ID}],#1) <> last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.msg-manager[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.msg-manager[{#NODE_ID}])<>"STABLE"'
                   recovery_mode: RECOVERY_EXPRESSION
                   recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.msg-manager[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.msg-manager[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.msg-manager[{#NODE_ID}])="STABLE"'
-                  name: '{#NODE_NAME} id {#NODE_ID} MESSAGING-MANAGER state'
+                  name: '{#NODE_NAME} MESSAGING-MANAGER state'
                   priority: WARNING
                   manual_close: 'YES'
             - uuid: d17064b41db44c138f6a574fd36f6a71
@@ -508,7 +508,7 @@ zabbix_export:
                   expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.site_manager[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.site_manager[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.site_manager[{#NODE_ID}])<>"STABLE"'
                   recovery_mode: RECOVERY_EXPRESSION
                   recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.site_manager[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.site_manager[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.site_manager[{#NODE_ID}])="STABLE"'
-                  name: '{#NODE_NAME} id {#NODE_ID} SITE_MANAGER state'
+                  name: '{#NODE_NAME} SITE_MANAGER state'
                   priority: WARNING
                   manual_close: 'YES'
           url: 'https://{$NSX.URL}/api/v1/cluster'
@@ -689,4 +689,3 @@ zabbix_export:
           description: 'NSX-T Manager URL or IP(e.g.,nsx-mgr.example.com) without scheme'
         - macro: '{$NSX.USERNAME}'
           description: 'NSX-T API Username'
-          
