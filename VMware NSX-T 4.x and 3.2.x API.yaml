@@ -4,7 +4,7 @@ zabbix_export:
     - uuid: a571c0d144b14fd4a87a9d9b2aa9fcd6
       name: Templates/Applications
   templates:
-    - uuid: cb2b29037ef6449da6255001e9a762e1
+    - uuid: 937bae2a2dd148bd8b94d612728e799f
       template: 'VMware NSX-T 4.x and 3.2.x API'
       name: 'VMware NSX-T 4.x and 3.2.x API'
       description: |
@@ -14,11 +14,11 @@ zabbix_export:
         set service http client-api-rate-limit 200
       vendor:
         name: github.com/konstx64
-        version: 1.0-2
+        version: 1.0-3
       groups:
         - name: Templates/Applications
       items:
-        - uuid: 818d3bd8afb74c699d0b51c0a4dda0a2
+        - uuid: 61fedda0866b4ffbafb4d903e3e0a2f9
           name: 'Management cluster overall status'
           type: DEPENDENT
           key: nsxt.cluster.overal_status
@@ -32,14 +32,14 @@ zabbix_export:
           master_item:
             key: nsxt.cluster_services
           triggers:
-            - uuid: 0f534e0adb0a4ff48b11aa3b2a413e62
+            - uuid: 5db209c9818b4ce2afb019f9d04f3ea7
               expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.cluster.overal_status,#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.cluster.overal_status,#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.cluster.overal_status,#1)<>"STABLE"'
               recovery_mode: RECOVERY_EXPRESSION
               recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.cluster.overal_status,#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.cluster.overal_status,#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.cluster.overal_status,#1)="STABLE"'
               name: 'NSX cluster state changed'
               priority: AVERAGE
               manual_close: 'YES'
-        - uuid: b778abb9cc0f4639bce26ce6b1e8d20b
+        - uuid: 6129afd4cc9d47c8962932f11d83ef86
           name: 'cluster services'
           type: HTTP_AGENT
           key: nsxt.cluster_services
@@ -55,7 +55,7 @@ zabbix_export:
             - name: Content-Type
               value: application/json
       discovery_rules:
-        - uuid: 51ca0dd136e746f7bb8201901e9ad000
+        - uuid: 24cad395396a4763aa3157231ce187a0
           name: 'NSX-T EdgeNodes discovery'
           type: HTTP_AGENT
           key: nsxt.edgenodes.discovery
@@ -64,16 +64,13 @@ zabbix_export:
           username: '{$NSX.USERNAME}'
           password: '{$NSX.PASSWORD}'
           item_prototypes:
-            - uuid: a4e29fbf57f44016ada21f3ea098667f
-              name: 'Edge Node {#EDGENODE_NAME} configuration state'
-              type: HTTP_AGENT
+            - uuid: 7d4cc1e0e96a4127af70759e19b7fe85
+              name: 'EdgeNode {#EDGENODE_NAME} configuration state'
+              type: DEPENDENT
               key: 'nsxt.edgenode.conf.state[{#EDGENODE_ID}]'
-              delay: 5m
+              delay: '0'
               value_type: CHAR
               trends: '0'
-              authtype: BASIC
-              username: '{$NSX.USERNAME}'
-              password: '{$NSX.PASSWORD}'
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -81,6 +78,111 @@ zabbix_export:
                 - type: DISCARD_UNCHANGED_HEARTBEAT
                   parameters:
                     - 6h
+              master_item:
+                key: 'nsxt.edgenode.state.master[{#EDGENODE_ID}]'
+              tags:
+                - tag: component
+                  value: EdgeNode
+                - tag: EdgeNode
+                  value: '{#EDGENODE_NAME} {#EDGENODE_ID}'
+              trigger_prototypes:
+                - uuid: 2e1934303a8b44029476520a345f481d
+                  expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.conf.state[{#EDGENODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.conf.state[{#EDGENODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.conf.state[{#EDGENODE_ID}])<>"NODE_READY"'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.conf.state[{#EDGENODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.conf.state[{#EDGENODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.conf.state[{#EDGENODE_ID}])="NODE_READY"'
+                  name: 'Edge Node {#EDGENODE_NAME} configuration state'
+                  priority: WARNING
+                  manual_close: 'YES'
+            - uuid: 6f8351684cd44a34ab328b1b3d9821b5
+              name: 'EdgeNode {#EDGENODE_NAME} datapath memory utilization'
+              type: DEPENDENT
+              key: 'nsxt.edgenode.datapath.mem[{#EDGENODE_ID}]'
+              delay: '0'
+              value_type: FLOAT
+              trends: '0'
+              units: '%'
+              description: 'Utilization of CPU cores that handle system and layer-7 related processing'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.node_status.system_status.edge_mem_usage.datapath_total_usage
+              master_item:
+                key: 'nsxt.edgenode.status.master[{#EDGENODE_ID}]'
+              tags:
+                - tag: component
+                  value: EdgeNode
+                - tag: EdgeNode
+                  value: '{#EDGENODE_NAME} {#EDGENODE_ID}'
+              trigger_prototypes:
+                - uuid: dc336407e924493886d844fa470cf57d
+                  expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.datapath.mem[{#EDGENODE_ID}])>{$DATAPATH.MEM.HIGH}'
+                  name: 'EdgeNode {#EDGENODE_NAME} datapath memory utilization high'
+                  priority: WARNING
+                  description: 'Overall memory utilization of datapath, including heap memory, memory pool and resident memory'
+                  manual_close: 'YES'
+            - uuid: 1685aca456544f33bb385740373b6681
+              name: 'EdgeNode {#EDGENODE_NAME} DPDK CPU utilization'
+              type: DEPENDENT
+              key: 'nsxt.edgenode.dpdk.cpu.util[{#EDGENODE_ID}]'
+              delay: '0'
+              value_type: FLOAT
+              trends: '0'
+              units: '%'
+              description: 'Utilization of CPU cores handling fast packet processing using DPDK'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.node_status.system_status.cpu_usage.avg_cpu_core_usage_dpdk
+              master_item:
+                key: 'nsxt.edgenode.status.master[{#EDGENODE_ID}]'
+              tags:
+                - tag: component
+                  value: EdgeNode
+                - tag: EdgeNode
+                  value: '{#EDGENODE_NAME} {#EDGENODE_ID}'
+              trigger_prototypes:
+                - uuid: ed33d9688f764481aae9118c07835235
+                  expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.dpdk.cpu.util[{#EDGENODE_ID}],#1)>{$DATAPATH.CPU.HIGH}'
+                  name: 'EdgeNode {#EDGENODE_NAME} DPDK CPU utilization'
+                  priority: WARNING
+                  manual_close: 'YES'
+            - uuid: 72957b7e887c44b3b67a58c9b457fbc6
+              name: 'EdgeNode {#EDGENODE_NAME} services CPU utilization'
+              type: DEPENDENT
+              key: 'nsxt.edgenode.services.cpu.util[{#EDGENODE_ID}]'
+              delay: '0'
+              value_type: FLOAT
+              trends: '0'
+              units: '%'
+              description: 'Utilization of CPU cores that handle system and layer-7 related processing'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.node_status.system_status.cpu_usage.avg_cpu_core_usage_non_dpdk
+              master_item:
+                key: 'nsxt.edgenode.status.master[{#EDGENODE_ID}]'
+              tags:
+                - tag: component
+                  value: EdgeNode
+                - tag: EdgeNode
+                  value: '{#EDGENODE_NAME} {#EDGENODE_ID}'
+              trigger_prototypes:
+                - uuid: 8a405a9c14884c938c47e2a0bbbce5cb
+                  expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.services.cpu.util[{#EDGENODE_ID}],#1)>{$SYS.CPU.HIGH}'
+                  name: 'EdgeNode {#EDGENODE_NAME} services CPU utilization'
+                  priority: WARNING
+                  manual_close: 'YES'
+            - uuid: 410d0f13c5e242d0a89389c516de827c
+              name: '{#EDGENODE_NAME}  state master Item'
+              type: HTTP_AGENT
+              key: 'nsxt.edgenode.state.master[{#EDGENODE_ID}]'
+              delay: 5m
+              history: '0'
+              value_type: TEXT
+              trends: '0'
+              authtype: BASIC
+              username: '{$NSX.USERNAME}'
+              password: '{$NSX.PASSWORD}'
               url: 'https://{$NSX.URL}/api/v1/transport-nodes/{#EDGENODE_ID}/state'
               headers:
                 - name: Content-Type
@@ -90,24 +192,13 @@ zabbix_export:
                   value: EdgeNode
                 - tag: EdgeNode
                   value: '{#EDGENODE_NAME} {#EDGENODE_ID}'
-              trigger_prototypes:
-                - uuid: 3273e8ae44f246c9890b9af1f0c9624a
-                  expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.conf.state[{#EDGENODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.conf.state[{#EDGENODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.conf.state[{#EDGENODE_ID}])<>"NODE_READY"'
-                  recovery_mode: RECOVERY_EXPRESSION
-                  recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.conf.state[{#EDGENODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.conf.state[{#EDGENODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.conf.state[{#EDGENODE_ID}])="NODE_READY"'
-                  name: 'Edge Node {#EDGENODE_NAME} configuration state'
-                  priority: WARNING
-                  manual_close: 'YES'
-            - uuid: 3b0a3b0a978a4c3389e97a8aed00db82
-              name: 'Edge Node {#EDGENODE_NAME}  overal state'
-              type: HTTP_AGENT
+            - uuid: 2e3211c860f04e70a064316d00181943
+              name: 'EdgeNode {#EDGENODE_NAME}  overal state'
+              type: DEPENDENT
               key: 'nsxt.edgenode.state[{#EDGENODE_ID}]'
-              delay: 5m
+              delay: '0'
               value_type: CHAR
               trends: '0'
-              authtype: BASIC
-              username: '{$NSX.USERNAME}'
-              password: '{$NSX.PASSWORD}'
               preprocessing:
                 - type: JSONPATH
                   parameters:
@@ -115,7 +206,33 @@ zabbix_export:
                 - type: DISCARD_UNCHANGED_HEARTBEAT
                   parameters:
                     - 6h
-              url: 'https://{$NSX.URL}/api/v1/transport-nodes/{#EDGENODE_ID}/state'
+              master_item:
+                key: 'nsxt.edgenode.state.master[{#EDGENODE_ID}]'
+              tags:
+                - tag: component
+                  value: EdgeNode
+                - tag: EdgeNode
+                  value: '{#EDGENODE_NAME} {#EDGENODE_ID}'
+              trigger_prototypes:
+                - uuid: 90cf24d631e6493494a25fcd325f7293
+                  expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.state[{#EDGENODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.state[{#EDGENODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.state[{#EDGENODE_ID}])<>"success"'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.state[{#EDGENODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.state[{#EDGENODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.state[{#EDGENODE_ID}])="success"'
+                  name: 'Edge Node {#EDGENODE_NAME}  overal state'
+                  priority: WARNING
+                  manual_close: 'YES'
+            - uuid: f51e41c660ce48c19bcd19a38493f24e
+              name: '{#EDGENODE_NAME} status master Item'
+              type: HTTP_AGENT
+              key: 'nsxt.edgenode.status.master[{#EDGENODE_ID}]'
+              delay: 5m
+              history: '0'
+              value_type: TEXT
+              trends: '0'
+              authtype: BASIC
+              username: '{$NSX.USERNAME}'
+              password: '{$NSX.PASSWORD}'
+              url: 'https://{$NSX.URL}/api/v1/transport-nodes/{#EDGENODE_ID}/status'
               headers:
                 - name: Content-Type
                   value: application/json
@@ -124,12 +241,30 @@ zabbix_export:
                   value: EdgeNode
                 - tag: EdgeNode
                   value: '{#EDGENODE_NAME} {#EDGENODE_ID}'
+            - uuid: 1b15d70ccb904a3b97bd5c22c18f538b
+              name: 'EdgeNode {#EDGENODE_NAME} system memory utilization'
+              type: DEPENDENT
+              key: 'nsxt.edgenode.system.mem[{#EDGENODE_ID}]'
+              delay: '0'
+              value_type: FLOAT
+              trends: '0'
+              units: '%'
+              description: 'Utilization of RAM on EdgeNode'
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - $.node_status.system_status.edge_mem_usage.datapath_total_usage
+              master_item:
+                key: 'nsxt.edgenode.status.master[{#EDGENODE_ID}]'
+              tags:
+                - tag: component
+                  value: EdgeNode
+                - tag: EdgeNode
+                  value: '{#EDGENODE_NAME} {#EDGENODE_ID}'
               trigger_prototypes:
-                - uuid: 53e3b458eed24461a3852b6d31d71709
-                  expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.state[{#EDGENODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.state[{#EDGENODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.state[{#EDGENODE_ID}])<>"success"'
-                  recovery_mode: RECOVERY_EXPRESSION
-                  recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.state[{#EDGENODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.state[{#EDGENODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.state[{#EDGENODE_ID}])="success"'
-                  name: 'Edge Node {#EDGENODE_NAME}  overal state'
+                - uuid: c6b56cf3426a46489ab9828bceb661a5
+                  expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.edgenode.system.mem[{#EDGENODE_ID}])>{$SYS.MEM.HIGH}'
+                  name: 'EdgeNode {#EDGENODE_NAME} system memory utilization high'
                   priority: WARNING
                   manual_close: 'YES'
           url: 'https://{$NSX.URL}/api/v1/transport-nodes'
@@ -150,7 +285,7 @@ zabbix_export:
             - type: JSONPATH
               parameters:
                 - '$.results[*]'
-        - uuid: f7e1fbcc85c546bd9e64ae52e009ade6
+        - uuid: 0980fef722e542b58f53d68b985f6b68
           name: 'NSX-T Appliance nodes discovery'
           type: HTTP_AGENT
           key: nsxt.managers.discovery
@@ -159,7 +294,7 @@ zabbix_export:
           username: '{$NSX.USERNAME}'
           password: '{$NSX.PASSWORD}'
           item_prototypes:
-            - uuid: cda341649fe341cf9ff20d922e4ed084
+            - uuid: 50159a07e3b447d8a5e1aee124c880e2
               name: '{#NODE_NAME} CLUSTER_BOOT_MANAGER state'
               type: DEPENDENT
               key: 'nsxt.manager.cl_boot_manager[{#NODE_ID}]'
@@ -181,14 +316,14 @@ zabbix_export:
                 - tag: 'NSX Manager'
                   value: '{#NODE_NAME} {#NODE_ID}'
               trigger_prototypes:
-                - uuid: 76f153be436b4d2b9558731e3d84c18d
+                - uuid: bd3ed2cd41fe455eadefbe8c7f697c4d
                   expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cl_boot_manager[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cl_boot_manager[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cl_boot_manager[{#NODE_ID}])<>"STABLE"'
                   recovery_mode: RECOVERY_EXPRESSION
                   recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cl_boot_manager[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cl_boot_manager[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cl_boot_manager[{#NODE_ID}])="STABLE"'
                   name: '{#NODE_NAME} CLUSTER_BOOT_MANAGER state'
                   priority: WARNING
                   manual_close: 'YES'
-            - uuid: 91f99695e1804ad1937fff132055af6b
+            - uuid: 38006095d3c049c8b84eedfc1000edca
               name: '{#NODE_NAME} cluser DATASTORE state'
               type: DEPENDENT
               key: 'nsxt.manager.cl_datstore_dependent[{#NODE_ID}]'
@@ -210,14 +345,14 @@ zabbix_export:
                 - tag: 'NSX Manager'
                   value: '{#NODE_NAME} {#NODE_ID}'
               trigger_prototypes:
-                - uuid: 939c21d956ef4eefbbc1fb3308295772
+                - uuid: 31213b72b0184a8d9c3139fac4e74b03
                   expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cl_datstore_dependent[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cl_datstore_dependent[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cl_datstore_dependent[{#NODE_ID}])<>"STABLE"'
                   recovery_mode: RECOVERY_EXPRESSION
                   recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cl_datstore_dependent[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cl_datstore_dependent[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cl_datstore_dependent[{#NODE_ID}])="STABLE"'
                   name: '{#NODE_NAME} cluser DATASTORE state'
                   priority: WARNING
                   manual_close: 'YES'
-            - uuid: 3136337f69324800afcdb49d2ceaa6d2
+            - uuid: 0675a4e39fc64d93aab4a715f0b1eb1f
               name: '{#NODE_NAME} CM-INVENTORY state'
               type: DEPENDENT
               key: 'nsxt.manager.cm-inventory[{#NODE_ID}]'
@@ -239,14 +374,14 @@ zabbix_export:
                 - tag: 'NSX Manager'
                   value: '{#NODE_NAME} {#NODE_ID}'
               trigger_prototypes:
-                - uuid: 9411c8d5d946449395289d1028175806
+                - uuid: df5aba3aba774dc1b4ffea15ae075152
                   expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cm-inventory[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cm-inventory[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cm-inventory[{#NODE_ID}])<>"STABLE"'
                   recovery_mode: RECOVERY_EXPRESSION
                   recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cm-inventory[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cm-inventory[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.cm-inventory[{#NODE_ID}])="STABLE"'
                   name: '{#NODE_NAME} CM-INVENTORY state'
                   priority: WARNING
                   manual_close: 'YES'
-            - uuid: 6d2bc654d34d40919b8b63f2ccf70084
+            - uuid: 4103f678abeb45b4bc1a2991867494f0
               name: '{#NODE_NAME} connection state'
               type: HTTP_AGENT
               key: 'nsxt.manager.conn_status[{#NODE_ID}]'
@@ -273,14 +408,14 @@ zabbix_export:
                 - tag: 'NSX Manager'
                   value: '{#NODE_NAME} {#NODE_ID}'
               trigger_prototypes:
-                - uuid: ef604f774c264dccaf98b8566f01f05c
+                - uuid: 0792f60e9e124ecbb20df2446127d05e
                   expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.conn_status[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.conn_status[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.conn_status[{#NODE_ID}])<>"CONNECTED"'
                   recovery_mode: RECOVERY_EXPRESSION
                   recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.conn_status[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.conn_status[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.conn_status[{#NODE_ID}])="CONNECTED"'
                   name: '{#NODE_NAME} connection state'
                   priority: WARNING
                   manual_close: 'YES'
-            - uuid: 7cfe4f9e6c9143d8bb8fca4f845754f9
+            - uuid: b84629d15e6c4b9aafe044e7f0746307
               name: '{#NODE_NAME} CONTROLLER state'
               type: DEPENDENT
               key: 'nsxt.manager.controller[{#NODE_ID}]'
@@ -302,14 +437,14 @@ zabbix_export:
                 - tag: 'NSX Manager'
                   value: '{#NODE_NAME} {#NODE_ID}'
               trigger_prototypes:
-                - uuid: 02bafeda8d4244838f4641cf6335f0e6
+                - uuid: 6d9673b37fd6444aab66d6a121e218bf
                   expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.controller[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.controller[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.controller[{#NODE_ID}])<>"STABLE"'
                   recovery_mode: RECOVERY_EXPRESSION
                   recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.controller[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.controller[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.controller[{#NODE_ID}])="STABLE"'
                   name: '{#NODE_NAME} CONTROLLER state'
                   priority: WARNING
                   manual_close: 'YES'
-            - uuid: 37b5bcfb90464453860952ad0217ee8d
+            - uuid: f3f4c4a2a75b437fa37ab2390653ec3c
               name: '{#NODE_NAME} CORFU_NONCONFIG state'
               type: DEPENDENT
               key: 'nsxt.manager.corfu_nonconfig[{#NODE_ID}]'
@@ -331,14 +466,14 @@ zabbix_export:
                 - tag: 'NSX Manager'
                   value: '{#NODE_NAME} {#NODE_ID}'
               trigger_prototypes:
-                - uuid: de7ff918af7e483aade214eeba7b6a9c
+                - uuid: fab679000801444ba2fa37b77a49a951
                   expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.corfu_nonconfig[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.corfu_nonconfig[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.corfu_nonconfig[{#NODE_ID}],#1)<>"STABLE"'
                   recovery_mode: RECOVERY_EXPRESSION
                   recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.corfu_nonconfig[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.corfu_nonconfig[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.corfu_nonconfig[{#NODE_ID}],#1)="STABLE"'
                   name: '{#NODE_NAME} CORFU_NONCONFIG state'
                   priority: WARNING
                   manual_close: 'YES'
-            - uuid: 462fc25b9a6048608ddef6c2e4dedf9c
+            - uuid: 70b2bee795d8472494f1a9462219bc4c
               name: '{#NODE_NAME} HTTPS state'
               type: DEPENDENT
               key: 'nsxt.manager.https[{#NODE_ID}]'
@@ -360,14 +495,14 @@ zabbix_export:
                 - tag: 'NSX Manager'
                   value: '{#NODE_NAME} {#NODE_ID}'
               trigger_prototypes:
-                - uuid: 2cd5ed16b7a744f8b1c7a7a84d1a994d
+                - uuid: a84af058deb04f1eae08a1119f674320
                   expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.https[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.https[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.https[{#NODE_ID}])<>"STABLE"'
                   recovery_mode: RECOVERY_EXPRESSION
                   recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.https[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.https[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.https[{#NODE_ID}])="STABLE"'
                   name: '{#NODE_NAME} HTTPS state'
                   priority: WARNING
                   manual_close: 'YES'
-            - uuid: 1045195d2dd64719932cede535179a26
+            - uuid: 3eb6ad9ff2e341339824e0d588031356
               name: '{#NODE_NAME} IDPS_REPORTING state'
               type: DEPENDENT
               key: 'nsxt.manager.idps_reporting[{#NODE_ID}]'
@@ -389,14 +524,14 @@ zabbix_export:
                 - tag: 'NSX Manager'
                   value: '{#NODE_NAME} {#NODE_ID}'
               trigger_prototypes:
-                - uuid: 92176d7c6f334648869dbeaad0b2f08d
+                - uuid: ebac08e1ebc54edb876c63320467b675
                   expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.idps_reporting[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.idps_reporting[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.idps_reporting[{#NODE_ID}])<>"STABLE"'
                   recovery_mode: RECOVERY_EXPRESSION
                   recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.idps_reporting[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.idps_reporting[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.idps_reporting[{#NODE_ID}])="STABLE"'
                   name: '{#NODE_NAME} IDPS_REPORTING state'
                   priority: WARNING
                   manual_close: 'YES'
-            - uuid: 49b67a15f0a54d86986883c73c6540dd
+            - uuid: b20238ca426b48039408b663d3333845
               name: '{#NODE_NAME} MANAGER state'
               type: DEPENDENT
               key: 'nsxt.manager.manager[{#NODE_ID}]'
@@ -418,14 +553,14 @@ zabbix_export:
                 - tag: 'NSX Manager'
                   value: '{#NODE_NAME} {#NODE_ID}'
               trigger_prototypes:
-                - uuid: ef34b601d0de47b79236c5d5c11a8fef
+                - uuid: f259a3c0e05348f0857548f46b272a6c
                   expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.manager[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.manager[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.manager[{#NODE_ID}])<>"STABLE"'
                   recovery_mode: RECOVERY_EXPRESSION
                   recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.manager[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.manager[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.manager[{#NODE_ID}])="STABLE"'
                   name: '{#NODE_NAME} id {#NODE_ID} MANAGER state'
                   priority: WARNING
                   manual_close: 'YES'
-            - uuid: 17b1596889f7413f997d246f9a04ffdf
+            - uuid: 87a21899fb1147b494dfd4cfe674fa03
               name: '{#NODE_NAME} MONITORING state'
               type: DEPENDENT
               key: 'nsxt.manager.monitoring[{#NODE_ID}]'
@@ -447,13 +582,13 @@ zabbix_export:
                 - tag: 'NSX Manager'
                   value: '{#NODE_NAME} {#NODE_ID}'
               trigger_prototypes:
-                - uuid: 311e2a348d6d4700a28faf88c1db87fe
+                - uuid: db6054000e9a4b1b864f761853b69514
                   expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.monitoring[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.monitoring[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.monitoring[{#NODE_ID}])<>"STABLE"'
                   recovery_mode: RECOVERY_EXPRESSION
                   recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.monitoring[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.monitoring[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.monitoring[{#NODE_ID}])="STABLE"'
                   name: '{#NODE_NAME} MONITORING state'
                   priority: WARNING
-            - uuid: 44d141672a87429b9ae6f78a31d81a17
+            - uuid: 56a6c352accd404d9d97afefd832376e
               name: '{#NODE_NAME} MESSAGING-MANAGER state'
               type: DEPENDENT
               key: 'nsxt.manager.msg-manager[{#NODE_ID}]'
@@ -475,14 +610,14 @@ zabbix_export:
                 - tag: 'NSX Manager'
                   value: '{#NODE_NAME} {#NODE_ID}'
               trigger_prototypes:
-                - uuid: 9bb7b514e5b94d3c96fe51533f38f6e4
+                - uuid: a67bc51be1214fb3a1529d0552343486
                   expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.msg-manager[{#NODE_ID}],#1) <> last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.msg-manager[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.msg-manager[{#NODE_ID}])<>"STABLE"'
                   recovery_mode: RECOVERY_EXPRESSION
                   recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.msg-manager[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.msg-manager[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.msg-manager[{#NODE_ID}])="STABLE"'
                   name: '{#NODE_NAME} MESSAGING-MANAGER state'
                   priority: WARNING
                   manual_close: 'YES'
-            - uuid: d17064b41db44c138f6a574fd36f6a71
+            - uuid: 172c500deaec49b1a025e1e35d30ddfa
               name: '{#NODE_NAME} SITE_MANAGER state'
               type: DEPENDENT
               key: 'nsxt.manager.site_manager[{#NODE_ID}]'
@@ -504,7 +639,7 @@ zabbix_export:
                 - tag: 'NSX Manager'
                   value: '{#NODE_NAME} {#NODE_ID}'
               trigger_prototypes:
-                - uuid: 603682d76f9e4684a04c47fc8d7280f8
+                - uuid: 38e277144d834d83818b12b5652a0776
                   expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.site_manager[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.site_manager[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.site_manager[{#NODE_ID}])<>"STABLE"'
                   recovery_mode: RECOVERY_EXPRESSION
                   recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.site_manager[{#NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.site_manager[{#NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.manager.site_manager[{#NODE_ID}])="STABLE"'
@@ -524,7 +659,7 @@ zabbix_export:
             - type: JSONPATH
               parameters:
                 - '$.nodes[*]'
-        - uuid: 6a07f40bba8246e0b8354c6f3f40c615
+        - uuid: ae5d986e0329468bb55274e4094e523b
           name: 'NSX-T T0 gateways discovery'
           type: HTTP_AGENT
           key: nsxt.T0s.discovery
@@ -533,7 +668,7 @@ zabbix_export:
           username: '{$NSX.USERNAME}'
           password: '{$NSX.PASSWORD}'
           item_prototypes:
-            - uuid: 7ec1ae2e6adb4efe928f6961eb640216
+            - uuid: 22f11b540aab46379cefeff65d4f9554
               name: '{#T0_NAME} with path {#T0_PATH} overal state'
               type: HTTP_AGENT
               key: 'nsxt.T0s.state.[{#T0_ID}]'
@@ -559,11 +694,11 @@ zabbix_export:
                   value: application/json
               tags:
                 - tag: component
-                  value: 'T0 Gateway'
+                  value: 'T0 Gateways'
                 - tag: 'T0 Gateway'
                   value: '{#T0_NAME} {#T0_ID}'
               trigger_prototypes:
-                - uuid: d62161a8ddca40e98bd60adab12eee71
+                - uuid: 07901c625e82412f8e6908739181b608
                   expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.T0s.state.[{#T0_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.T0s.state.[{#T0_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.T0s.state.[{#T0_ID}])<>"SUCCESS"'
                   recovery_mode: RECOVERY_EXPRESSION
                   recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.T0s.state.[{#T0_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.T0s.state.[{#T0_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.T0s.state.[{#T0_ID}])="SUCCESS"'
@@ -590,7 +725,7 @@ zabbix_export:
             - type: JSONPATH
               parameters:
                 - '$.results[*]'
-        - uuid: 1ca10266731e433f87f411c80e56c977
+        - uuid: 8c4e625f8bf14043b9ae21656004d6a9
           name: 'NSX-T Host transport nodes discovery'
           type: HTTP_AGENT
           key: nsxt.tn.nodes.discovery
@@ -599,7 +734,7 @@ zabbix_export:
           username: '{$NSX.USERNAME}'
           password: '{$NSX.PASSWORD}'
           item_prototypes:
-            - uuid: 6489adbb8b0d41029c43f10cb838f88d
+            - uuid: 944b4aaed947483a8756c9603990092d
               name: '{#TN_NODE_NAME} deployment state'
               type: HTTP_AGENT
               key: 'nsxt.tn.node.deployment.state[{#TN_NODE_ID}]'
@@ -621,14 +756,14 @@ zabbix_export:
                 - tag: component
                   value: HostTransportNode
               trigger_prototypes:
-                - uuid: 473fb46b9c7b4d489973df174187e63a
+                - uuid: d4e06806140b469485a45e90ea681cc0
                   expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.tn.node.deployment.state[{#TN_NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.tn.node.deployment.state[{#TN_NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.tn.node.deployment.state[{#TN_NODE_ID}])<>"success"'
                   recovery_mode: RECOVERY_EXPRESSION
                   recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.tn.node.deployment.state[{#TN_NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.tn.node.deployment.state[{#TN_NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.tn.node.deployment.state[{#TN_NODE_ID}])="success"'
                   name: '{#TN_NODE_NAME} deployment state'
                   priority: WARNING
                   manual_close: 'YES'
-            - uuid: 7854cec228b44f1bb7e3a62bfc87087b
+            - uuid: 7c7dd19aac224d44b3af0d69b1e562af
               name: '{#TN_NODE_NAME} status'
               type: HTTP_AGENT
               key: 'nsxt.tn.nodes.status[{#TN_NODE_ID}]'
@@ -650,7 +785,7 @@ zabbix_export:
                 - tag: component
                   value: HostTransportNode
               trigger_prototypes:
-                - uuid: 66fa49f271754015a052f40820342fc4
+                - uuid: bf216e80a56e46b1a0b15b7e4bb9ff72
                   expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.tn.nodes.status[{#TN_NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.tn.nodes.status[{#TN_NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.tn.nodes.status[{#TN_NODE_ID}])<>"success"'
                   recovery_mode: RECOVERY_EXPRESSION
                   recovery_expression: 'last(/VMware NSX-T 4.x and 3.2.x API/nsxt.tn.nodes.status[{#TN_NODE_ID}],#1)<>last(/VMware NSX-T 4.x and 3.2.x API/nsxt.tn.nodes.status[{#TN_NODE_ID}],#2) and last(/VMware NSX-T 4.x and 3.2.x API/nsxt.tn.nodes.status[{#TN_NODE_ID}])="success"'
@@ -683,9 +818,21 @@ zabbix_export:
         - tag: target
           value: vmware
       macros:
+        - macro: '{$DATAPATH.CPU.HIGH}'
+          value: '90'
+          description: 'Edge node datapath CPU usage is very high'
+        - macro: '{$DATAPATH.MEM.HIGH}'
+          value: '85'
+          description: 'Overall memory utilization of datapath, including heap memory, memory pool and resident memory'
         - macro: '{$NSX.PASSWORD}'
           description: 'NSX-T API Password'
         - macro: '{$NSX.URL}'
           description: 'NSX-T Manager URL or IP(e.g.,nsx-mgr.example.com) without scheme'
         - macro: '{$NSX.USERNAME}'
           description: 'NSX-T API Username'
+        - macro: '{$SYS.CPU.HIGH}'
+          value: '80'
+          description: 'Edge node CPU usage is very high'
+        - macro: '{$SYS.MEM.HIGH}'
+          value: '90'
+          description: 'EdgeNode Memory utilization'
